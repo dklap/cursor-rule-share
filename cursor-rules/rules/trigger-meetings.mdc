@@ -1,0 +1,176 @@
+---
+description: Meeting triggers - /standup, /prep 1:1, /prep lt
+alwaysApply: true
+---
+
+# Meeting Triggers
+
+> Triggers for meeting preparation and team communication.
+
+---
+
+## `/standup` — Daily Huddle Prep
+
+When the user types **`/standup`**, generate a quick reference for the daily huddle with direct reports.
+
+### Format
+```
+## Daily Huddle — [Today's Date]
+
+### [Direct Report Name]
+**Hot Items:**
+- [Project/Item]: [Last known status] | [Next milestone/date if known]
+- [Project/Item]: [Last known status]
+
+**Upcoming:**
+- [Date]: [Event/Deadline]
+
+**Questions/Discussion:**
+- [Any open items to raise with them]
+
+---
+[Repeat for each direct report from people.md]
+```
+
+### Behavior
+1. Pull latest status from `private/tracking/priorities.md` and `private/tracking/hot_topics.md`
+2. Group all items by owner/direct report (from `private/context/people.md`)
+3. Highlight any items marked 🔴 At Risk or with approaching deadlines (< 7 days)
+4. Include a "Questions/Discussion" section for open threads with each person
+5. Keep each person's section to **5 bullets or fewer** — this is a quick reference
+
+### After Generating
+Ask: "Any updates to capture before the huddle?"
+
+---
+
+## `/prep 1:1 [name]` — 1:1 Meeting Preparation
+
+When the user types **`/prep 1:1 [name]`**, generate a structured prep doc for that 1:1.
+
+### Supported Names
+- Direct reports (from `private/context/people.md`)
+- Manager/upward (special handling)
+- Cross-functional partners
+
+### Format for Direct Reports
+```
+## 1:1 with [Name] — [Today's Date]
+
+### Their Priorities & Status
+| Priority/Project | Last Known Status | Questions/Discussion | Source |
+|------------------|-------------------|----------------------|--------|
+| [Project] | [Status] | [What to ask/discuss] | [TeamSpace/Standup/1:1/etc.] |
+
+### Blockers & Support Needed
+- [Any blockers they've raised or may need help with] *(Source: [where this came from])*
+
+### Feedback & Coaching
+| Topic | Context | Approach | Source |
+|-------|---------|----------|--------|
+| [Positive/Constructive] | [Specific example] | [How to deliver] | [Previous 1:1/Standup/etc.] |
+
+### Their Asks of Me
+| Request | Status | Notes |
+|---------|--------|-------|
+| [What they need] | [Done/Pending] | [Context] |
+
+### Career & Development
+- [Growth areas, stretch assignments, promotion path] *(Source: [Hot Topics/Follow-ups/etc.])*
+
+### Follow-ups from Last 1:1
+- [ ] [Action item from previous meeting]
+```
+
+### Source Attribution
+Always include where discussion topics originated from:
+- **TeamSpace** — weekly check-ins
+- **Standup** — daily huddle notes
+- **Previous 1:1** — prior meeting notes
+- **Hot Topics** — active concerns from `hot_topics.md`
+- **Follow-ups** — open items from daily reports
+- **people.md** — role/focus areas
+
+### Format for Upward 1:1 (Manager)
+```
+## 1:1 with [Manager Name] — [Today's Date]
+
+### Asks & Decisions Needed
+| Topic | Context | What I Need |
+|-------|---------|-------------|
+| [Topic] | [Brief background] | [Decision / Approval / Input] |
+
+### Escalations
+| Issue | Who's Involved | Impact | Recommended Action |
+|-------|----------------|--------|--------------------|
+| [Issue] | [Names] | [Business impact] | [What I'm proposing] |
+
+### What They Need from Me
+| Request | Status | Notes |
+|---------|--------|-------|
+| [Task/Focus area] | [Done / In Progress / Blocked] | [Any context] |
+
+### Priority Updates (FYI)
+- [Priority]: [One-line status]
+
+### Topics to Raise if Time
+- [Optional topic]
+```
+
+### Behavior
+1. Match name to known person from `private/context/people.md`
+2. Pull relevant priorities and hot topics for that person
+3. Check for any 🔴 At Risk items
+4. Prompt: "Any feedback to share?" or "Anything specific to cover?"
+5. Offer to capture action items after the 1:1
+
+---
+
+## `/prep lt` — Leadership Team Meeting Preparation
+
+When the user types **`/prep lt`**, generate prep for leadership team meetings (peer meetings).
+
+### Pre-Meeting Check
+⚠️ **Before generating**: Check if relevant newsletters/communications have been reviewed.
+
+### Format
+```
+## LT Meeting Prep — [Today's Date]
+
+### Announcements/Newsletter Summary (if available)
+- [Key announcements]
+- [Action items or awareness items]
+
+### Pass-Downs for My Team
+| Topic | Source | Action for My Team |
+|-------|--------|--------------------|
+| [Topic from LT] | [Who raised it] | [What to communicate] |
+
+### My Priority Updates to Share
+| Priority | Status | Key Message for Peers |
+|----------|--------|----------------------|
+| [Priority] | [🟡/🟢/🔴] | [One-liner update] |
+
+### Staffing Discussions
+- [Open reqs, moves, concerns to raise or listen for]
+
+### Cross-Team Dependencies
+| Dependency | Other Team | Status | Ask/Update |
+|------------|------------|--------|------------|
+| [Item] | [Team] | [Status] | [What's needed] |
+
+### Questions for Peers
+- [Cross-team asks]
+
+### Topics to Listen For
+- [Things that might affect my team]
+```
+
+### Behavior
+1. Prompt to check org newsletters first
+2. Pull current priority statuses from `private/tracking/priorities.md`
+3. Check `private/tracking/hot_topics.md` for anything relevant to peer discussion
+4. Include section for pass-downs to capture for `/standup`
+
+### After the Meeting
+Prompt: "Any pass-downs to add for your next /standup?"

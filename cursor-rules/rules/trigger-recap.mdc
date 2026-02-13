@@ -1,0 +1,157 @@
+---
+description: Recap trigger - /recap for generating post-1:1 summary emails
+alwaysApply: true
+---
+
+# Recap Trigger
+
+> Generate post-1:1 summary emails from meeting notes.
+
+---
+
+## `/recap` — Generate 1:1 Summary Email
+
+When the user types **`/recap`** or **`/recap [name]`**, generate a concise post-1:1 summary email based on the meeting notes captured in the daily report.
+
+### Input Formats
+
+| Format | Example |
+|--------|---------|
+| Prompt for name | `/recap` — asks who the 1:1 was with |
+| With name | `/recap Joaquin` — generates for that person |
+| Most recent | `/recap last` — uses the most recent 1:1 notes |
+
+### Processing Flow
+
+#### Step 1: Identify the 1:1
+
+If name not specified:
+```
+📧 1:1 RECAP EMAIL
+
+Who was the 1:1 with?
+(Match to people.md or specify name)
+```
+
+#### Step 2: Gather Meeting Notes
+
+Pull from today's daily report:
+1. **1:1 notes section** — Look for "1:1 with [Name]" in Notes & Capture Space
+2. **1:1 prep section** — Any items discussed from prep
+3. **Follow-up items** — Any new follow-ups created for this person or (Self)
+
+#### Step 3: Extract Components
+
+| Component | Source | Include If |
+|-----------|--------|------------|
+| **Key Discussion Points** | Meeting notes | Always — main topics discussed |
+| **Their Action Items** | Follow-ups assigned to them | If any exist |
+| **My Action Items** | Follow-ups assigned to (Self) related to them | If any exist |
+| **Personal Touch** | Personal notes (house, trip, etc.) | If mentioned and appropriate |
+| **Wins/Positives** | Positive items from discussion | If any noted |
+
+#### Step 4: Generate Email
+
+```
+📧 1:1 RECAP — [Name]
+
+**Subject:** 1:1 Recap — [Date]
+
+Hi [First Name],
+
+Thanks for the great conversation today! Here's a quick summary:
+
+**Key Discussion Points:**
+- [Point 1]
+- [Point 2]
+- [Point 3]
+
+**Your Action Items:**
+- [ ] [Their action 1]
+- [ ] [Their action 2]
+
+**My Action Items:**
+- [ ] [My action 1]
+- [ ] [My action 2]
+
+[Optional: Personal touch — e.g., "Good luck with X!" or "Congrats on Y!"]
+
+Talk soon,
+[Your Name]
+
+---
+
+Options:
+(a) Copy to clipboard
+(b) Save to active/communications/
+(c) Edit before saving
+(d) Regenerate with different tone
+```
+
+---
+
+## Tone Options
+
+**`/recap [name] formal`** — More professional tone
+**`/recap [name] casual`** — Lighter, friendlier tone (default)
+**`/recap [name] brief`** — Ultra-concise, bullets only
+
+### Tone Examples
+
+**Casual (default):**
+> Thanks for the great conversation today! Here's a quick summary...
+
+**Formal:**
+> Thank you for taking the time to meet today. Please find below a summary of our discussion...
+
+**Brief:**
+> Quick recap from today:
+> • [Point 1]
+> • [Point 2]
+> Action items: [list]
+
+---
+
+## `/recap save` — Save Without Sending
+
+Save the recap to `active/communications/` for later reference:
+
+```
+Saved to: active/communications/2026-02-05_Recap_Joaquin_Calvo.md
+```
+
+---
+
+## Integration with Other Triggers
+
+- **`/close`**: Prompt "Want to generate recap emails for today's 1:1s?"
+- **`/prep 1:1 [name]`**: Show previous recap if exists ("Last recap sent: [Date]")
+- **`/first`**: Note any unsent recaps from previous day
+
+---
+
+## Template Customization
+
+The recap template can be customized in `shared/templates/recap_email.md`. Default sections:
+
+1. **Greeting** — "Hi [Name],"
+2. **Opener** — Thanks + context
+3. **Key Points** — Bullet list
+4. **Their Actions** — Checkboxes
+5. **My Actions** — Checkboxes
+6. **Closer** — Personal touch + sign-off
+
+---
+
+## Privacy Considerations
+
+**Exclude from recaps:**
+- Sensitive performance feedback (unless explicitly shared in 1:1)
+- Salary/compensation discussions
+- Confidential org information
+- Personal struggles (unless appropriate to acknowledge)
+
+**Always include:**
+- Action items (clear accountability)
+- Key decisions made
+- Timeline commitments

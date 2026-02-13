@@ -1,0 +1,275 @@
+---
+description: Transcript trigger - /transcript for processing meeting transcripts
+alwaysApply: true
+---
+
+# Transcript Trigger
+
+> Process meeting transcripts to extract action items, decisions, and context updates.
+
+---
+
+## `/transcript` — Process Meeting Notes
+
+When the user types **`/transcript`** or pastes a meeting transcript, analyze and extract actionable information.
+
+### Input Formats
+
+| Format | Example |
+|--------|---------|
+| Trigger then paste | `/transcript` followed by pasted text |
+| Inline with context | `/transcript 1:1 with Lisa` then paste |
+| File reference | `/transcript file:meeting_notes.txt` |
+| Quick mode | `/transcript quick` — extract action items only |
+
+### Processing Flow
+
+#### Step 1: Identify Meeting Context
+
+Prompt (if not provided):
+```
+📝 TRANSCRIPT PROCESSING
+
+What type of meeting was this?
+(a) 1:1 — with direct report, manager, or partner
+(b) Team — standup, huddle, team meeting
+(c) Leadership — LT, cross-functional leadership
+(d) External — vendor, customer, partner
+(e) Other — specify
+
+Who was in the meeting? (I'll match to people.md)
+```
+
+#### Step 2: Name Recognition
+
+Cross-reference all names mentioned against `private/context/people.md`:
+
+| Found Name | Match Status | Action |
+|------------|--------------|--------|
+| [Name] | ✅ Known (Direct Report) | Link to profile |
+| [Name] | ✅ Known (Partner) | Link to profile |
+| [Name] | ❓ Unknown | Flag for people.md addition |
+
+For unknown names, prompt:
+```
+I found these names not in your people.md:
+- [Name 1] — Who is this? (role/context)
+- [Name 2] — Who is this?
+
+Add to people.md? (y/n for each)
+```
+
+#### Step 3: Extract Action Items
+
+Scan for patterns indicating follow-ups:
+
+| Pattern | Example | Extraction |
+|---------|---------|------------|
+| "I'll..." / "I will..." | "I'll send that doc" | → (Self) follow-up |
+| "[Name] will..." | "Lisa will update the widget" | → Follow-up for [Name] |
+| "Can you..." / "Could you..." | "Can you check on that?" | → Follow-up for speaker's target |
+| "Action item:" | "Action item: review metrics" | → Explicit follow-up |
+| "Let's..." / "We should..." | "Let's circle back on this" | → (Self) follow-up |
+| "By [date]..." | "By Friday, we need..." | → Follow-up with deadline |
+| "Follow up on..." | "Follow up on the ticket" | → Explicit follow-up |
+
+Output format:
+```
+📋 ACTION ITEMS FOUND: [count]
+
+| Person | Action | Source Quote | Deadline |
+|--------|--------|--------------|----------|
+| (Self) | Send doc to team | "I'll send that doc" | — |
+| Lisa Kestylboym | Update widget | "Lisa will update the widget" | — |
+| (Self) | Circle back on timeline | "Let's circle back on this" | — |
+
+Add these to Open Follow-Up Items? (y/all/select by number)
+```
+
+#### Step 4: Extract Decisions
+
+Scan for decision patterns:
+
+| Pattern | Example |
+|---------|---------|
+| "We decided..." | "We decided to go with option A" |
+| "The decision is..." | "The decision is to delay launch" |
+| "We're going to..." | "We're going to use the new API" |
+| "Approved:" | "Approved: new vendor contract" |
+| "Agreement:" | "Agreement: weekly syncs instead of daily" |
+| "Final call:" | "Final call: ship it Friday" |
+
+Output format:
+```
+📌 DECISIONS FOUND: [count]
+
+1. [Decision summary]
+   → Quote: "[source text]"
+   → Participants: [Names involved]
+   → Log to: Decision_Log_[suggested topic].md?
+
+2. [Decision summary]
+   ...
+
+Log these decisions? (y/all/select by number)
+```
+
+#### Step 5: Extract Hot Topics & Escalations
+
+Scan for risk/escalation patterns:
+
+| Pattern | Example |
+|---------|---------|
+| "Blocked by..." | "We're blocked by the API team" |
+| "Risk:" / "At risk:" | "This is at risk if we don't get resources" |
+| "Escalate..." | "We need to escalate this to leadership" |
+| "Concern:" | "My concern is the timeline" |
+| "Issue:" | "The issue is budget approval" |
+
+Output format:
+```
+🔥 POTENTIAL HOT TOPICS: [count]
+
+| Topic | Type | Quote |
+|-------|------|-------|
+| API team blocker | Blocker | "We're blocked by the API team" |
+| Timeline risk | Risk | "This is at risk if we don't..." |
+
+Add to hot_topics.md? (y/n for each)
+```
+
+#### Step 6: Extract Key Topics & Context
+
+Summarize main discussion points:
+```
+📝 MEETING SUMMARY
+
+**Meeting**: [Type] with [Participants]
+**Date**: [Today or specified date]
+
+### Key Topics Discussed
+1. [Topic 1] — [Brief summary]
+2. [Topic 2] — [Brief summary]
+3. [Topic 3] — [Brief summary]
+
+### Notable Quotes
+- "[Significant quote 1]" — [Speaker]
+- "[Significant quote 2]" — [Speaker]
+
+### Context for Future Reference
+- [Any important background mentioned]
+```
+
+#### Step 7: Apply Extracted Items
+
+After user confirmation:
+
+1. **Follow-ups** → Add to today's daily report Open Follow-Up Items
+2. **Decisions** → Create/append to appropriate Decision_Log_[Topic].md
+3. **Hot topics** → Add to `private/tracking/hot_topics.md`
+4. **New people** → Add to `private/context/people.md`
+5. **Summary** → Add to daily report Notes & Capture Space
+
+Final confirmation:
+```
+✅ TRANSCRIPT PROCESSED
+
+Applied:
+- ✓ [X] follow-ups added to daily report
+- ✓ [Y] decisions logged to Decision_Log_[Topic].md
+- ✓ [Z] hot topics added
+- ✓ [N] new people added to people.md
+
+Meeting summary added to today's Notes & Capture Space.
+```
+
+---
+
+## `/transcript quick` — Action Items Only
+
+Abbreviated mode that only extracts action items:
+
+```
+📋 QUICK SCAN — Action Items Only
+
+| Person | Action | Deadline |
+|--------|--------|----------|
+| ... | ... | ... |
+
+Add all to follow-ups? (y/n)
+```
+
+---
+
+## `/transcript 1:1 [name]` — 1:1 Meeting Mode
+
+Optimized for 1:1 transcripts:
+
+1. Auto-matches [name] to people.md
+2. Focuses on:
+   - Their updates/blockers
+   - Your commitments to them
+   - Their commitments to you
+   - Career/development mentions
+   - Feedback given/received
+
+Output includes section for 1:1 notes:
+```
+## 1:1 Notes — [Name] — [Date]
+
+### Their Updates
+- [What they shared]
+
+### Blockers Raised
+- [Any blockers mentioned]
+
+### My Commitments
+| I said I would... | Deadline |
+|-------------------|----------|
+| ... | ... |
+
+### Their Commitments
+| They said they would... | Deadline |
+|-------------------------|----------|
+| ... | ... |
+
+### Feedback Exchanged
+- [Any feedback discussed]
+
+### Career/Development
+- [Any career topics discussed]
+```
+
+---
+
+## Transcript Sources
+
+The trigger handles common transcript formats:
+
+| Source | Notes |
+|--------|-------|
+| Webex | Auto-detects speaker labels |
+| Zoom | Handles timestamp format |
+| Teams | Processes inline speaker tags |
+| Manual notes | Plain text processing |
+| Otter.ai | Structured transcript format |
+| Raw paste | Best-effort parsing |
+
+---
+
+## Integration with Other Triggers
+
+- **`/close`**: Transcript-extracted items will be reviewed during close
+- **`/first`**: Follow-ups from transcripts appear in next day's report
+- **`/prep 1:1`**: 1:1 transcript summaries inform next prep
+- **`/weekly`**: Decisions from transcripts appear in weekly review
+
+---
+
+## Privacy Note
+
+⚠️ **Transcript content is processed in-session only.** 
+
+- Raw transcripts are NOT stored unless you explicitly save them
+- Only extracted action items, decisions, and summaries are persisted
+- Sensitive content should be reviewed before confirming additions

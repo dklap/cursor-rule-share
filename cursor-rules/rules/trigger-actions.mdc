@@ -1,0 +1,319 @@
+---
+description: Action triggers - /followup, /decision, /escalate, /delegate, /celebrate
+alwaysApply: true
+---
+
+# Action Triggers
+
+> Triggers for capturing decisions, delegations, escalations, and wins.
+
+---
+
+## `/followup [person]: [topic]` — Track Action Items with Duplicate Detection
+
+When the user types **`/followup [person]: [topic]`**, add a follow-up item to the daily report's Open Follow-Up Items table.
+
+### Input Formats
+| Format | Example |
+|--------|---------|
+| Full format | `/followup [Name]: Review performance metrics` |
+| Inline in notes | `Need to followup with [Name] on streaming timeline` |
+| Quick tag | `/followup: Check with [Name] on AI adoption videos` |
+
+### Duplicate Detection Behavior
+
+**BEFORE adding any follow-up, check for potential duplicates:**
+
+1. **Scan existing follow-ups** in today's daily report AND `private/tracking/open_followups.md` (if exists)
+2. **Match on Person + Similar Topic**:
+   - Same person name (case-insensitive, handle nicknames defined in people.md)
+   - Topic similarity: >60% word overlap OR same key terms (e.g., "MCP", "streaming", "AI adoption")
+
+3. **If potential duplicate found**, prompt:
+   ```
+   ⚠️ Possible duplicate detected:
+   
+   EXISTING: [Person] — [Existing topic] (added [Date])
+   NEW:      [Person] — [New topic]
+   
+   Options:
+   (a) Merge — Update existing with new context
+   (b) Keep both — These are separate items
+   (c) Replace — Delete old, add new
+   (d) Skip — Don't add (already tracked)
+   ```
+
+4. **If user selects (a) Merge**:
+   - Append new context to existing topic
+   - Update date to today
+   - Format: `[Original topic] → Updated: [new context]`
+   - Example: `MCP performance metrics → Updated: also check latency benchmarks`
+
+5. **If no duplicate**, add normally to Open Follow-Up Items table
+
+### Follow-Up Entry Format
+```markdown
+| Person | Topic | Date Added | Status |
+|--------|-------|------------|--------|
+| [Name] | [Topic description] | [YYYY-MM-DD] | ⏳ Open |
+```
+
+### Person Matching Rules
+Match input names to known people from `private/context/people.md`:
+| Input | Matches To |
+|-------|------------|
+| [Nickname], [First], [Last] | [Full Name from people.md] |
+| [Short name] | [Full Name] |
+| (Self), Me, [Your first name] | (Self) |
+
+*Configure your team's nicknames in people.md*
+
+### Sorting Rules
+When displayed in daily reports, follow-ups should be:
+1. **Sorted alphabetically by Person**
+2. **(Self) items always at the end**
+
+### Status Values
+| Status | Meaning |
+|--------|---------|
+| ⏳ Open | Not yet addressed |
+| ✅ Done | Completed — remove at next /close |
+| ➡️ Moved | Converted to priority or project |
+| 🔄 Recurring | Ongoing check-in item |
+
+### Marking Complete
+To mark a follow-up complete:
+- `/followup done: [person] [keyword]` — Marks matching item as ✅ Done
+- During `/close` — Prompted to review open items
+
+### Behavior Summary
+1. Parse person and topic from input
+2. Normalize person name against people.md
+3. **Check for duplicates** (same person + similar topic)
+4. If duplicate found → prompt for merge/keep/replace/skip
+5. If merge selected → update existing entry with new context
+6. If no duplicate → add new row to Open Follow-Up Items
+7. Confirm: "Added follow-up: [Person] — [Topic]" or "Updated follow-up: [Person] — [Merged topic]"
+
+---
+
+## `/decision [topic]` — Log a Decision
+
+When the user types **`/decision [topic]`**, capture a decision with context.
+
+### Supported Topics
+| Topic | Filename |
+|-------|----------|
+| architecture | `active/decisions/Decision_Log_Architecture.md` |
+| staffing | `active/decisions/Decision_Log_Staffing.md` |
+| vendor | `active/decisions/Decision_Log_Vendor.md` |
+| process | `active/decisions/Decision_Log_Process.md` |
+| technical | `active/decisions/Decision_Log_Technical.md` |
+| [custom] | `active/decisions/Decision_Log_[Custom].md` |
+
+### Conversation Flow
+1. "What decision was made?"
+2. "What's the rationale / why this option?"
+3. "What alternatives were considered?" (optional)
+4. "Who was involved in making this decision?"
+5. "Any review date or conditions that would revisit this?"
+
+### Decision Entry Format
+```markdown
+## [Decision Title]
+**Date**: [Today's Date]
+**Decision Maker(s)**: [Names]
+**Status**: ✅ Active | 🟡 Under Review | ❌ Superseded
+
+### Decision
+[Clear statement of what was decided]
+
+### Rationale
+[Why this option was chosen]
+
+### Alternatives Considered
+| Option | Pros | Cons | Why Not Chosen |
+|--------|------|------|----------------|
+| [Alt 1] | [Pros] | [Cons] | [Reason] |
+
+### Stakeholders Consulted
+- [Name] — [Role/Input]
+
+### Review Conditions
+- [ ] Revisit by [Date] or if [Condition]
+
+---
+```
+
+### Quick Mode
+`/decision architecture: We'll use LangGraph for all new AI agents because of orchestration flexibility`
+
+LLM creates entry with provided info, prompts only for missing critical fields.
+
+---
+
+## `/escalate [issue]` — Draft Escalation Communication
+
+When the user types **`/escalate [brief description]`**, draft a professional escalation.
+
+### Conversation Flow
+1. "What's the issue?" (if not provided inline)
+2. "What's the business impact?" (timeline, revenue, customer, team)
+3. "What have you already tried?"
+4. "Who are you escalating to?" (manager, peer, external)
+5. "What action do you need from them?"
+
+### Output Format
+```
+## Escalation: [Issue Title]
+**Date**: [Today's Date]
+**Escalating To**: [Name(s)]
+**Severity**: 🔴 Critical | 🟠 High | 🟡 Medium
+
+---
+
+### Draft Email
+
+**Subject**: [Action Needed] [Brief Issue Description]
+
+**To**: [Recipient]
+**Cc**: [Others who should be aware]
+
+---
+
+Hi [Name],
+
+I'm escalating [issue] for your awareness and support.
+
+**Situation**: [1-2 sentences on what's happening]
+
+**Impact**: [Business impact — timeline, revenue, customer, team]
+
+**What We've Tried**: 
+- [Action 1]
+- [Action 2]
+
+**Ask**: [Specific action needed — decision, resource, air cover, introduction]
+
+**Recommended Path Forward**: [Your suggested solution]
+
+**Timeline**: [When you need a response/action]
+
+Happy to discuss live if helpful. Let me know.
+
+Best,
+[Name]
+
+---
+```
+
+### Escalation Templates by Audience
+| Audience | Tone | Key Elements |
+|----------|------|-------------|
+| Upward (manager) | Concise, solution-oriented | Impact, ask, recommendation |
+| Peer (lateral) | Collaborative | Shared interest, specific help needed |
+| External (vendor/partner) | Professional, firm | Contract/SLA reference, timeline |
+
+### Behavior
+1. Gather context through conversation
+2. Identify audience and adjust tone
+3. Generate draft email
+4. Prompt: "Want me to add this to hot_topics.md for tracking?"
+
+---
+
+## `/delegate [task]` — Task Assignment with Context
+
+When the user types **`/delegate [task description]`**, format a clear task assignment.
+
+### Conversation Flow
+1. "What's the task?" (if not provided inline)
+2. "Who should own it?"
+3. "What's the deadline?"
+4. "Any context or constraints they should know?"
+5. "What does 'done' look like?"
+
+### Output Format
+```
+## Task Assignment
+**To**: [Name]
+**From**: [User]
+**Date**: [Today's Date]
+**Priority**: 🔴 Urgent | 🟡 Normal | 🟢 When Time Permits
+
+---
+
+### Task
+[Clear description of what needs to be done]
+
+### Context
+[Why this matters, background info]
+
+### Constraints/Considerations
+- [Constraint 1]
+- [Constraint 2]
+
+### Definition of Done
+- [ ] [Criterion 1]
+- [ ] [Criterion 2]
+
+### Deadline
+[Date] — [Any flexibility?]
+
+### Support Available
+[Who can help, resources available]
+
+---
+```
+
+### Behavior
+1. Match assignee to known people from `private/context/people.md`
+2. Pull relevant context from priorities/hot topics if applicable
+3. Offer to add as follow-up item for next 1:1
+
+---
+
+## `/celebrate [win]` — Capture Wins
+
+When the user types **`/celebrate [description]`**, log a win for recognition and performance reviews.
+
+### Conversation Flow
+1. "What's the win?" (if not provided inline)
+2. "Who deserves credit?" (individual, team, cross-functional)
+3. "What was the impact?" (business outcome, customer value)
+4. "Any quotes or specific contributions to highlight?"
+
+### Output Format
+```
+## 🎉 Win: [Title]
+**Date**: [Today's Date]
+**Category**: Delivery | Innovation | Collaboration | Leadership | Customer Impact
+
+### What Happened
+[Description of the win]
+
+### Who Deserves Credit
+| Name | Contribution |
+|------|-------------|
+| [Name] | [What they did] |
+
+### Impact
+[Business outcome, metrics if available]
+
+### Recognition Actions
+- [ ] Mentioned in team meeting
+- [ ] Shared with leadership
+- [ ] Added to performance notes for [Name]
+- [ ] Shared in org newsletter
+
+---
+```
+
+### File Organization
+All wins logged to `active/wins/Wins_Log.md` (reverse chronological order, newest first).
+
+### Behavior
+1. Capture win details
+2. Append to Wins_Log.md (create if doesn't exist)
+3. Prompt: "Want to share this upward or recognize publicly?"
+4. Cross-reference to team member for performance review notes

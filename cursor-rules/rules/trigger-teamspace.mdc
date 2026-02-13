@@ -1,0 +1,212 @@
+---
+description: TeamSpace trigger - /teamspace for processing team check-ins
+alwaysApply: true
+---
+
+# TeamSpace Trigger
+
+> Process TeamSpace check-ins to capture team member updates for 1:1 prep and notes.
+
+---
+
+## `/teamspace` — Process TeamSpace Check-In
+
+When the user types **`/teamspace`** or **`/teamspace [name]`**, process a pasted TeamSpace check-in and extract relevant information.
+
+### Input Formats
+
+| Format | Example |
+|--------|---------|
+| Trigger then paste | `/teamspace` followed by pasted check-in |
+| With name specified | `/teamspace Dustin` then paste |
+| Multiple check-ins | `/teamspace all` then paste batch |
+
+### Processing Flow
+
+#### Step 1: Identify Team Member
+
+If name not specified, prompt:
+```
+📋 TEAMSPACE CHECK-IN
+
+Who is this check-in from?
+(Match to people.md or specify new name)
+```
+
+If name provided, match against `private/context/people.md`:
+- First name match (case-insensitive)
+- Flag if unknown: "I don't have [Name] in people.md. Add them?"
+
+#### Step 2: Extract Check-In Components
+
+Parse the TeamSpace format for these sections:
+
+| Section | What to Extract | Maps To |
+|---------|-----------------|---------|
+| **Enjoyed Last Week** | What they liked working on | 1:1 prep — positive topics, engagement indicators |
+| **Ongoing Priorities** | Current work focus | 1:1 prep — priorities table |
+| **Asks from Manager** | What they need from you | 1:1 prep — Their Asks of Me |
+| **Blockers** (if present) | What's blocking them | 1:1 prep — Blockers & Support Needed |
+| **Wins** (if present) | Accomplishments | Consider for /celebrate |
+
+#### Step 3: Present Extracted Data
+
+```
+📋 TEAMSPACE CHECK-IN — [Name]
+Date: [Today or date from check-in]
+
+### 😊 Enjoyed Last Week
+- [Item 1]
+- [Item 2]
+
+### 🎯 Ongoing Priorities
+| Priority | Notes |
+|----------|-------|
+| [Priority 1] | [Any details] |
+| [Priority 2] | [Any details] |
+
+### 🙋 Asks from Manager
+| Request | Context |
+|---------|---------|
+| [Ask 1] | [Details] |
+
+### 🚧 Blockers (if any)
+- [Blocker 1]
+
+---
+Options:
+(a) Add to today's 1:1 prep for [Name]
+(b) Add to daily notes only
+(c) Save for next 1:1 (no 1:1 today)
+(d) Skip — just reviewing
+```
+
+#### Step 4: Apply to Context
+
+**If (a) Add to 1:1 prep:**
+- Update the 1:1 prep section in today's daily report
+- Merge priorities with existing items
+- Add asks to "Their Asks of Me" table
+- Add blockers to "Blockers & Support Needed"
+- Note enjoyed items for positive conversation starters
+
+**If (b) Add to daily notes:**
+- Append formatted check-in to Notes & Capture Space
+
+**If (c) Save for next 1:1:**
+- Create follow-up item: "[Name] — Review TeamSpace check-in at next 1:1"
+
+---
+
+## `/teamspace all` — Batch Process Multiple Check-Ins
+
+For processing multiple team members' check-ins at once:
+
+```
+📋 BATCH TEAMSPACE PROCESSING
+
+Paste all check-ins below. I'll identify each team member and process individually.
+
+[Paste here]
+```
+
+Processing:
+1. Split by team member (detect name headers or separators)
+2. Match each to people.md
+3. Present summary:
+   ```
+   Found check-ins for:
+   ✓ Dustin Janzen — 2 priorities, 1 ask
+   ✓ Kelvin Li — 3 priorities, 0 asks
+   ✓ Jose Mora — 1 priority, 2 asks
+   ⚠️ Unknown: "Sam" — Who is this?
+   
+   Process all? (y/n)
+   ```
+4. Apply to respective 1:1 preps or daily notes
+
+---
+
+## `/teamspace summary` — Team Overview
+
+Generate a summary view of recent TeamSpace check-ins:
+
+```
+📊 TEAMSPACE SUMMARY — Week of [Date]
+
+### Check-In Status
+| Name | Last Check-In | Submitted? |
+|------|---------------|------------|
+| Dustin Janzen | [Date] | ✅ |
+| Kelvin Li | [Date] | ✅ |
+| Jose Mora | — | ❌ Missing |
+| Lisa Kestylboym | — | ❌ Missing |
+
+### Common Themes
+**Enjoyed:** [Patterns across team]
+**Priorities:** [Key focus areas]
+**Asks:** [Aggregate requests]
+
+### Outstanding Asks
+| Person | Ask | Date | Status |
+|--------|-----|------|--------|
+| [Name] | [Ask] | [Date] | ⏳ Open |
+```
+
+---
+
+## Integration with 1:1 Prep
+
+When running `/prep 1:1 [name]`, check for recent TeamSpace data:
+
+```
+📋 1:1 with [Name] — [Date]
+
+### TeamSpace Check-In (from [Date])
+**Enjoyed:** [Items]
+**Priorities:** [Items]
+**Asks:** [Items]
+
+[Rest of 1:1 prep...]
+```
+
+If no recent check-in (>7 days), note:
+```
+⚠️ No recent TeamSpace check-in from [Name] (last: [Date] or never)
+Consider asking them to submit one.
+```
+
+---
+
+## Integration with Other Triggers
+
+- **`/first`**: Note which team members have pending TeamSpace check-ins to review
+- **`/standup`**: Pull priorities from recent TeamSpace data
+- **`/close`**: Flag if TeamSpace asks weren't addressed
+- **`/weekly`**: Include TeamSpace submission rates in team health
+
+---
+
+## Data Storage
+
+TeamSpace data is stored in the daily report's Notes section, tagged for easy retrieval:
+
+```markdown
+### TeamSpace: [Name] (Feb 5)
+**Enjoyed:** ...
+**Priorities:** ...
+**Asks:** ...
+```
+
+For persistent tracking of asks, add to Open Follow-Up Items:
+```
+| [Name] | TeamSpace ask: [description] | [Date] | ⏳ Open |
+```
+
+---
+
+## Privacy Note
+
+TeamSpace check-ins may contain personal sentiments (enjoyed/frustrated). Handle with appropriate discretion:
+- Don't share "enjoyed" items publicly without permission
+- Treat as input for 1:1 conversations, not public status

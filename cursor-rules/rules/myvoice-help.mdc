@@ -1,0 +1,185 @@
+---
+description: MyVoice quick reference for commands and triggers
+alwaysApply: false
+---
+
+# MyVoice Quick Reference
+
+> Keep this open as a command reference during your day.
+
+---
+
+## 🌅 Daily Workflow
+
+| Command | When to Use | What It Does |
+|---------|-------------|--------------|
+| `/first` | Start of day | Creates daily report, archives yesterday, confirms pending items |
+| `/first quiet` | Quick start | Creates report without prompts |
+| `/close` | End of session | Processes notes, infers updates, queues confirmations |
+
+---
+
+## 📅 Meeting Prep
+
+| Command | When to Use | What It Does |
+|---------|-------------|--------------|
+| `/standup` | Before team huddle | Generates items grouped by direct report |
+| `/prep 1:1 [name]` | Before any 1:1 | Structured prep for direct reports and manager (from people.md) |
+| `/prep lt` | Before LT meeting | Peer meeting prep with pass-downs |
+
+---
+
+## 📝 Capture & Log
+
+| Command | When to Use | What It Does |
+|---------|-------------|--------------|
+| `/decision [topic]` | After making a decision | Logs to Decision_Log_[Topic].md |
+| `/celebrate [win]` | When something goes well | Logs to Wins_Log.md |
+| `/escalate [issue]` | Need to raise an issue | Drafts escalation email |
+| `/delegate [task]` | Assigning work | Creates structured task assignment |
+
+**Decision Topics:** `architecture`, `staffing`, `vendor`, `process`, `technical`, `[custom]`
+
+---
+
+## 🔄 Weekly & Review
+
+| Command | When to Use | What It Does |
+|---------|-------------|--------------|
+| `/weekly` | End of week / Monday | Reviews priorities, retro, plans ahead |
+| `/review` | Weekly or after a break | Full context verification, updates all timestamps |
+| `/review quick` | Quick check-in | Abbreviated review — confirms or walks through changes |
+
+---
+
+## 🛠️ Setup & Git
+
+| Command | When to Use | What It Does |
+|---------|-------------|--------------|
+| `/setup` | New user onboarding | Interactive setup wizard |
+| `/setup quick` | Experienced users | Creates template files to fill manually |
+| `/push` | Before git push | Validates architecture, scans for PII |
+| `/push status` | Check what would commit | Preview without pushing |
+
+---
+
+## 📁 File Locations
+
+| Type | Location | Notes |
+|------|----------|-------|
+| Today's report | `active/Daily_Report_YYYY-MM-DD.md` | Created by /first |
+| Decisions | `active/decisions/Decision_Log_[Topic].md` | Created by /decision (yearly retention) |
+| Wins | `active/wins/Wins_Log.md` | Created by /celebrate (yearly retention) |
+| Communications | `active/communications/Draft_*.md` | Drafts purged after sending |
+| Your context | `private/context/*.md` | profile, people, glossary (rarely changes) |
+| Tracking | `private/tracking/*.md` | priorities, hot_topics (weekly updates) |
+| Projects | `private/projects/*.md` | Time-bounded initiatives |
+| Archived reports | `archive/daily_reports/` | Moved by /first |
+
+---
+
+## 💡 Tips
+
+- **Notes during the day**: Jot in the daily report's "Notes & Capture Space" — `/close` will process them
+- **Quick decisions**: `/decision architecture: [one-liner]` — skips conversation flow
+- **1:1 prep relevance**: Items near their accountability = top; org-wide FYI = "if time"
+- **Variable 1:1s**: `/weekly` will ask about your manager's schedule
+
+---
+
+## 🔑 Key People Reference
+
+| Name | Role | 1:1 |
+|------|------|-----|
+| [Your Manager] | [Title] | [Day/Time] |
+| [Chief of Staff] | Staff Support | [Day/Time] |
+| [Direct Report 1] | [Role] | [Day/Time] |
+| [Direct Report 2] | [Role] | [Day/Time] |
+| [Direct Report 3] | [Role] | [Day/Time] |
+| [Direct Report 4] | [Role] | [Day/Time] |
+
+*Customize this section after running /setup*
+
+---
+
+# Trigger Reference
+
+Quick reference for all available triggers in the MyVoice context system.
+
+## Setup & Git
+
+| Trigger | Purpose | Output |
+|---------|---------|--------|
+| `/setup` | Initial setup wizard | Creates private/ files interactively |
+| `/setup quick` | Quick setup | Creates template files to fill manually |
+| `/push` | Safe git push | Validates architecture, scans for PII |
+| `/push status` | Preview push | Shows what would be committed |
+| `/gitignore check` | Verify .gitignore | Confirms private data is excluded |
+
+## Session Management
+
+| Trigger | Purpose | Output |
+|---------|---------|--------|
+| `/first` | Morning kickoff | Creates daily report, archives yesterday's |
+| `/first quiet` | Silent morning kickoff | Creates report without prompts |
+| `/close` | End-of-session refresh | Walks through context updates |
+| `/weekly` | Weekly review | Progress, retro, planning |
+| `/review` | Full context verification | Verifies all items, updates timestamps |
+| `/review quick` | Quick verification | Abbreviated Y/N check |
+
+## Meeting Prep
+
+| Trigger | Purpose | Output |
+|---------|---------|--------|
+| `/standup` | Daily huddle prep | Items grouped by direct report |
+| `/prep 1:1 [name]` | 1:1 preparation | Structured prep doc |
+| `/prep lt` | Leadership team meeting | Peer meeting prep |
+
+## Actions
+
+| Trigger | Purpose | Output |
+|---------|---------|--------|
+| `/decision [topic]` | Log a decision | Entry in Decision_Log_[Topic].md |
+| `/escalate [issue]` | Draft escalation | Email draft with context |
+| `/delegate [task]` | Assign a task | Structured task assignment |
+| `/celebrate [win]` | Capture a win | Entry in Wins_Log.md |
+| `/transcript` | Process meeting transcript | Extracts action items, decisions, hot topics |
+| `/transcript quick` | Quick transcript scan | Action items only |
+| `/transcript 1:1 [name]` | Process 1:1 transcript | Optimized for 1:1 meeting notes |
+| `/teamspace` | Process TeamSpace check-in | Extracts priorities, asks, enjoyed items |
+| `/teamspace [name]` | Process check-in for specific person | Direct to their 1:1 prep |
+| `/teamspace all` | Batch process multiple check-ins | Process entire team at once |
+| `/teamspace summary` | Team check-in overview | Submission status, common themes |
+| `/recap` | Generate post-1:1 summary email | From meeting notes |
+| `/recap [name]` | Recap for specific person | Direct generation |
+| `/recap [name] formal` | Formal tone recap | More professional |
+| `/recap [name] brief` | Ultra-concise recap | Bullets only |
+
+## Quick Reference
+
+### Decision Topics
+- `/decision architecture`
+- `/decision staffing`
+- `/decision vendor`
+- `/decision process`
+- `/decision technical`
+- `/decision [custom]`
+
+### 1:1 Prep Names
+Match names from your `private/context/people.md` file:
+- `/prep 1:1 [direct report name]`
+- `/prep 1:1 [manager name]` (uses upward format)
+- `/prep 1:1 [cross-functional partner]`
+
+## File Locations
+
+| Trigger | Creates/Updates |
+|---------|-----------------|
+| `/first` | `active/Daily_Report_YYYY-MM-DD.md` |
+| `/decision` | `active/decisions/Decision_Log_[Topic].md` |
+| `/celebrate` | `active/wins/Wins_Log.md` |
+| `/close` | `private/tracking/*.md` files |
+| `/weekly` | `private/tracking/priorities.md`, `private/tracking/hot_topics.md` |
+| `/transcript` | Daily report (follow-ups), Decision_Log, hot_topics.md, people.md |
+| `/teamspace` | Daily report (1:1 prep, notes), Open Follow-Up Items |
+| `/recap` | `active/communications/` (optional save) |

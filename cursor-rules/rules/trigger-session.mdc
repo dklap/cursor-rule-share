@@ -1,0 +1,405 @@
+---
+description: Session triggers for daily workflow - /first, /close, /weekly, /review
+alwaysApply: true
+---
+
+# Session Triggers
+
+> Triggers for managing daily workflow and context updates.
+
+---
+
+## `/first` — Morning Kickoff & Daily Report
+
+When the user types **`/first`**, generate today's daily report file and archive the previous day's report.
+
+### What It Does
+1. **Archives yesterday's report** → Moves `Daily_Report_[Yesterday].md` to `archive/daily_reports/`
+2. **Creates today's report** → `active/Daily_Report_YYYY-MM-DD.md`
+3. **Pulls context** from `private/tracking/priorities.md`, `private/tracking/hot_topics.md`, and `private/context/people.md`
+
+### Daily Report Template
+```markdown
+# Daily Report — [Day of Week], [Month DD, YYYY]
+
+## 🎯 Today's Top 3
+1. [Priority 1 — pulled from priorities.md]
+2. [Priority 2]
+3. [Priority 3]
+
+## 📅 Today's Calendar Highlights
+| Time | Meeting | Prep Notes |
+|------|---------|------------|
+| [Time] | [Meeting Name] | [Quick context or link to prep] |
+
+## 🤝 1:1 Prep (Auto-Generated)
+[If 1:1 scheduled for today based on people.md cadence, include prep section]
+
+## 🔥 Hot Topics Snapshot
+[Pulled from hot_topics.md — quick status reminder]
+
+## 🚨 Blocked Items (Jira)
+[Query Jira for blocked items across team projects]
+
+| Team | Project | Issue | Summary | Assignee |
+|------|---------|-------|---------|----------|
+| [Team Name] | [Project Key] | [Issue Link] | [Summary] | [Assignee Name] |
+
+*Query: status=Blocked OR labels=BLOCKED in [YOUR_JIRA_PROJECTS from glossary.md]*
+
+## 📋 Open Follow-Up Items
+[Pull from previous day's captured /followup tags and any unresolved follow-ups]
+[**Sort by Person alphabetically**, with (Self) items at the end]
+
+| Person | Topic | Date Added | Status |
+|--------|-------|------------|--------|
+| [Name] | [Follow-up topic] | [Date] | ⏳ Open |
+
+*Carried forward until marked complete or moved to a project/priority*
+
+## ⏰ Upcoming This Week
+| Date | Event | Notes |
+|------|-------|-------|
+| [Date] | [Event] | [Context] |
+
+## 📝 Notes & Capture Space
+[Space for ad-hoc notes during the day]
+
+---
+
+### 🔑 Quick Capture Key
+| Tag | Use For | Example |
+|-----|---------|--------|
+| `/decision[topic]:` | Decisions made | `/decision[arch]: Using LangGraph for new agents` |
+| `/escalate:` | Issues to raise | `/escalate: MCP perf blocking timeline` |
+| `/delegate:` | Tasks to assign | `/delegate: [Name] - review metrics` |
+| `/win:` | Wins to celebrate | `/win: BETA exit criteria 3/4 complete` |
+| `/hot:` | New hot topic | `/hot: Vendor contract renewal due Feb` |
+| `/person:` | New contact | `/person: [Name] (PM on project) - met at LT` |
+| `/followup:` | Action items | `/followup: Check with [Name] on status` |
+
+*`/close` will process these and queue confirmations for tomorrow's `/first`*
+
+---
+*Generated: [Timestamp] | Archive: archive/daily_reports/*
+```
+
+### Behavior
+1. On `/first`, check if yesterday's report exists → archive it
+2. **Check for pending confirmations** from yesterday's `/close`:
+   - If `active/pending_confirmations.md` exists, present items for quick Y/N confirmation
+   - Apply confirmed items to relevant private/ files
+   - Delete or archive the pending file
+3. **Query Jira for blocked items** across team projects:
+   - Projects: [Configure in glossary.md or people.md - list your team's Jira project keys]
+   - JQL: `project in ([PROJECT_KEYS]) AND (status = Blocked OR labels = BLOCKED) AND status not in (Done, Cancelled)`
+   - Display blocked items grouped by team for quick triage
+4. **Filter calendar for meetings only**:
+   - Ignore standing reminders (e.g., "Gratitudes Due", "Friday Gratitudes")
+   - Only include actual meetings with attendees or Webex links
+5. Create today's report file with template
+6. Pull data from private/ files
+7. If 1:1 detected for today, run that prep inline
+8. Prompt: "Good morning! Here's your daily report. Anything you want to add to today's focus?"
+
+### 1:1 Prep: Name Matching Rules
+
+**⚠️ CRITICAL: Do NOT hallucinate or merge names**
+
+When matching a calendar invite name (e.g., "1:1 [Your Name]/[Other Name]") to a person in `people.md`:
+
+1. **Only use FIRST NAME for matching** unless the calendar invite includes a full name
+2. **If multiple people share a first name**, ASK the user which one before generating prep
+3. **NEVER combine parts of different people's names** (e.g., don't hallucinate full names)
+4. **If person is not in people.md**, mark as "New 1:1" and ask user for context rather than guessing
+5. **Check the manager chain**: If you know someone's manager, use that as a hint
+
+Example of WRONG behavior:
+- Calendar shows: "1:1 with [Name]"
+- people.md has: "[Different Full Name]"
+- ❌ WRONG: Assume a combined/hallucinated name
+- ✅ RIGHT: Ask "I see a 1:1 with [Name] but don't have them in people.md. Can you confirm who this is?"
+
+### Quick Mode
+`/first quiet` — Generate report without prompting for additions
+
+---
+
+## `/close` — End-of-Session Context Refresh
+
+When the user types **`/close`**, initiate a structured check-in to capture updates for context files.
+
+### Step 0: Scan Today's Conversation
+
+Before checking the daily report, scan the **entire conversation history** from this session:
+
+1. **Identify potentially missed context**:
+   - New acronyms or terms explained → Should go to `glossary.md`?
+   - Program/project status updates discussed → Should update `priorities.md`?
+   - New people or stakeholders mentioned → Should add to `people.md`?
+   - Decisions made or recommendations given → Should log?
+   - New concerns or risks raised → Should add to `hot_topics.md`?
+   - Links to documents shared → Should capture reference?
+
+2. **Cross-check against existing context files**:
+   - Is this acronym already in glossary? If not, flag it.
+   - Was this status update already captured? If not, flag it.
+   - Is this person already in people.md? If not, flag it.
+
+3. **Present conversation findings**:
+   ```
+   📡 Scanning today's conversation...
+   
+   I found these items that may not be captured yet:
+   
+   📖 Glossary (new terms):
+   - [Term]: [Definition from conversation]
+   
+   🎯 Priority Updates:
+   - [Priority]: [Status/info discussed]
+   
+   👥 People:
+   - [Name]: [Role/context mentioned]
+   
+   🔥 Hot Topics:
+   - [Topic]: [Context from conversation]
+   
+   📎 Documents Referenced:
+   - [Doc name]: [URL shared]
+   
+   Should I add these to your context files? (y/n for each, or 'all')
+   ```
+
+### Step 1: Process Daily Report Notes (MANDATORY)
+
+**⚠️ DO NOT SKIP THIS STEP** — The Notes & Capture Space often contains critical follow-ups, decisions, and context.
+
+Read today's `active/Daily_Report_YYYY-MM-DD.md` and thoroughly scan the **Notes & Capture Space** section:
+
+1. **Extract ALL captured notes** from the day — read the entire section
+2. **Look for tagged items**:
+   - `/followup` — Add to Open Follow-Up Items
+   - `/delegate` — Add to Open Follow-Up Items (marked as delegate)
+   - `/decision` — Log to appropriate Decision_Log
+   - `/hot` — Add to hot_topics.md
+   - `/person` — Add to people.md
+   - `/win` — Log to Wins_Log.md
+3. **Infer untagged updates**:
+   - New people/stakeholders mentioned by name → Add to people.md?
+   - Meeting notes with action items → Follow-ups?
+   - Status updates discussed → Priority changes?
+   - New terms/acronyms explained → Glossary?
+   - URLs/documents shared → Capture reference?
+   - Organizational changes mentioned → Update people.md?
+4. **Merge with conversation findings** from Step 0 (deduplicate)
+5. **Present ALL findings for confirmation**:
+   ```
+   📝 From your daily notes + conversation:
+   
+   📋 Follow-ups found: [count]
+   | Person | Topic |
+   |--------|-------|
+   | ... | ... |
+   
+   👥 New People: [count]
+   | Name | Role/Context |
+   |------|--------------|
+   | ... | ... |
+   
+   🔥 Hot Topics: [count]
+   📖 Glossary Terms: [count]
+   📌 Delegates: [count]
+   
+   Add all? (y/n for each category, or 'all')
+   ```
+6. **Queue confirmed items** for `/first` verification tomorrow
+
+### Step 2: Priority Status Check
+For each priority in `private/tracking/priorities.md`:
+1. "**[Priority Name]** — Any status change? (Still 🟡 In Progress, moved to 🟢 Complete, or 🔴 At Risk?)"
+2. "Any updates to target dates or milestones?"
+3. "New blockers, dependencies, or risks to note?"
+
+### Step 3: Hot Topics Refresh
+4. "Any new hot topics or escalations that came up today?"
+5. "Any hot topics that can be retired or marked resolved?"
+
+### Step 4: People & Org Updates
+6. "Any changes to team structure, new hires, departures, or role changes?"
+7. "Any new stakeholders or relationships worth noting?"
+
+### Step 5: Upcoming Events
+8. "Any important meetings, deadlines, or events coming up I should add?"
+
+### Step 6: Learnings & Context
+9. "Anything you explained multiple times today that should be added to context?"
+10. "Any new acronyms, terms, or domain knowledge worth capturing?"
+
+### Wrap-Up
+- Summarize proposed changes
+- Offer to apply updates to the relevant private/ files
+- Update timestamps
+- **Save pending confirmations** to `active/pending_confirmations.md` for `/first` review
+
+### Pending Confirmations File
+
+If any inferred items need morning verification, create/update:
+```markdown
+# Pending Confirmations — [Date]
+
+Items inferred from yesterday's notes, awaiting confirmation:
+
+## Hot Topics
+- [ ] [Inferred topic] — Source: "[note excerpt]"
+
+## Priority Updates  
+- [ ] [Priority] → [Status change]
+
+## People
+- [ ] [Name] — [Role/context]
+
+## Decisions
+- [ ] [Decision] — Log to Decision_Log_[Topic].md?
+
+---
+*Review these at /first tomorrow*
+```
+
+---
+
+## `/weekly` — Weekly Review & Planning
+
+When the user types **`/weekly`**, initiate a structured weekly review.
+
+### Format
+```
+## Weekly Review — Week of [Date]
+
+### 🎯 Priority Progress
+| Priority | Status Last Week | Status Now | Key Movement |
+|----------|------------------|------------|---------------|
+| [Priority 1] | [🟡] | [🟢/🟡/🔴] | [What changed] |
+
+### 🔥 Hot Topics Update
+| Topic | Status | Resolution/Next Step |
+|-------|--------|---------------------|
+| [Topic] | [Active/Resolved/Escalated] | [Action] |
+
+### 📈 OKR/Goal Check-In
+| Goal | Target | Current | On Track? |
+|------|--------|---------|----------|
+| [Goal 1] | [Target] | [Current] | ✅/⚠️/❌ |
+
+### 📅 Upcoming Week
+**Key Meetings:**
+- [Day]: [Meeting] — [Prep needed?]
+
+**Deadlines & Deliverables:**
+- [Date]: [Deliverable] — [Owner]
+
+### 🔄 Retrospective
+**What went well this week?**
+- [Win 1]
+
+**What could have gone better?**
+- [Challenge 1]
+
+**What will I do differently?**
+- [Adjustment]
+
+### 📝 Draft Update for Leadership (optional)
+> [2-3 bullet summary suitable for upward communication]
+```
+
+### Conversation Flow
+1. "Want to run a full `/review` to verify all context, or quick status update only?"
+2. "Let's review your priorities — any status changes this week?"
+3. "Any hot topics resolved or new ones to add?"
+4. "Quick retro: One win and one challenge from this week?"
+5. "What's the most important thing for next week?"
+6. "Is your manager 1:1 this week or next?" (if bi-weekly)
+7. "Want me to draft a summary for leadership?"
+
+### After Review
+- Offer to update `private/tracking/priorities.md` and `private/tracking/hot_topics.md`
+- Archive any completed priorities to `archive/projects/`
+
+---
+
+## `/review-prep` — Direct Report Performance Review Context
+
+When the user types **`/review-prep [name]`**, load that direct report's confidential performance file for review preparation.
+
+### What It Does
+1. **Loads DR file** from `private/confidential/reviews/[name].md`
+2. **Displays key context** for review prep:
+   - Current goals & status
+   - Strengths and development areas
+   - Recent feedback captured
+   - Previous review summaries
+3. **Enables private drafting** of review content within that session
+
+### Usage Examples
+- `/review-prep [direct_report_name]` — Load that DR's performance context
+
+### Name Matching
+Use first name match against files in `private/confidential/reviews/`:
+- `[firstname_lastname].md` → [Firstname]
+
+The system will match first names to files in the reviews folder.
+
+### Output Format
+```markdown
+## 🔒 Review Prep: [Name]
+
+**Role**: [Current role from file]
+**Goals Status**: [Quick summary]
+
+### Key Strengths
+- [Bullet list from file]
+
+### Development Focus
+- [Bullet list from file]
+
+### Recent Feedback
+| Date | Source | Summary |
+|------|--------|---------|
+| ... | ... | ... |
+
+### Previous Review Summary
+[Last review notes if available]
+
+---
+*Ready to draft review content. What section are you working on?*
+```
+
+---
+
+## 🔒 Confidential Content Isolation Rules
+
+**These files are NEVER to be included in any output except via explicit `/review-prep` trigger:**
+
+### Protected Folders
+- `private/confidential/reviews/` — Performance data for each direct report
+- `private/confidential/` — All files in this folder (org structure analysis, sensitive planning)
+
+### Isolation Behavior
+When generating ANY of the following, **exclude all content from `private/confidential/`**:
+
+1. **Email drafts** — Never include DR performance data or org structure thinking
+2. **Slack messages** — Never include DR performance data or org analysis
+3. **/close summaries** — Never mention DR performance observations or org planning
+4. **/first daily reports** — Never include DR feedback, review content, or org restructuring thoughts
+5. **/weekly summaries** — Never include individual performance details or staff evaluations
+6. **Standup or status updates** — Never include review content or org analysis
+7. **Meeting prep** (except /review-prep) — Never include performance data
+8. **Any communication to others** — This is private manager context only
+
+### Allowed Access
+- `/review-prep [name]` — Explicitly loads that DR's file
+- Direct questions like "What are [DR Name]'s development goals?" — Answer from context but mark as confidential
+- 1:1 prep when explicitly preparing for a DR conversation
+- Org structure discussions when the user explicitly asks to continue the analysis
+
+### Why This Matters
+Performance feedback, compensation notes, development observations, and org structure thinking are sensitive. They should inform the user's thinking but never appear in outbound communications.

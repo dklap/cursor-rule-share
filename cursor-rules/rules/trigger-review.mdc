@@ -1,0 +1,196 @@
+---
+description: Review trigger - /review for full context verification
+alwaysApply: true
+---
+
+# Review Trigger
+
+> Full context verification to prevent staleness and maintain accuracy.
+
+---
+
+## `/review` — Full Context Verification
+
+When the user types **`/review`**, systematically walk through all private/ context files to verify accuracy and update timestamps.
+
+### When to Use
+- Weekly (standalone or as part of `/weekly`)
+- After a break from using the system (>3 days)
+- Before high-stakes meetings where context accuracy matters
+- When onboarding a new LLM conversation
+
+---
+
+### Review Flow
+
+#### Step 1: Priorities (`private/tracking/priorities.md`)
+
+Walk through each priority one by one:
+
+```
+📋 PRIORITY REVIEW
+
+Priority 1: [Name]
+- Current status: [Status]
+- Target date: [Date]
+- Owner: [Owner]
+- Last verified: [Date]
+
+Still accurate? 
+(y) Yes, unchanged → Update timestamp
+(s) Status change → What's the new status?
+(d) Done → Archive to archive/projects/
+(r) Remove → No longer a priority
+(e) Edit → What changed?
+```
+
+Repeat for each priority.
+
+#### Step 2: Hot Topics (`private/tracking/hot_topics.md`)
+
+Walk through each active hot topic:
+
+```
+🔥 HOT TOPICS REVIEW
+
+Topic: [Name]
+- Status: [Status]
+- Owner: [Owner]  
+- Last verified: [Date]
+
+Still active?
+(y) Yes, unchanged → Update timestamp
+(r) Resolved → Move to Recently Resolved with resolution note
+(e) Escalated → Update status, add escalation details
+(u) Update → What changed?
+(x) Remove → No longer relevant
+```
+
+Repeat for each hot topic.
+
+#### Step 3: People (`private/context/people.md`)
+
+Quick verification (not item-by-item unless changes):
+
+```
+👥 PEOPLE REVIEW
+
+Current org structure:
+- Direct reports: [List from people.md]
+- Manager: [Name] ([1:1 schedule])
+- Staff: [Names and schedules]
+
+Any changes?
+(y) Yes → Walk through: new hires, departures, role changes, 1:1 time changes
+(n) No changes → Update review timestamp
+```
+
+If changes, prompt for specifics:
+- "Any new team members?"
+- "Anyone departed or moved?"
+- "Any role/responsibility changes?"
+- "Any 1:1 schedule changes?"
+
+#### Step 4: Glossary (`private/context/glossary.md`)
+
+Quick verification:
+
+```
+📖 GLOSSARY REVIEW
+
+Current terms: [List from glossary.md]
+
+Any updates?
+(a) Add new terms → What terms?
+(r) Remove outdated → Which ones?
+(n) No changes → Update review timestamp
+```
+
+#### Step 5: Profile (`private/context/profile.md`)
+
+Only if major changes expected:
+
+```
+👤 PROFILE REVIEW
+
+Name: [Your Name]
+Title: [Your Title]
+Reports to: [Manager Name]
+Location: [Your Location] ([Timezone])
+
+Any changes to role, reporting, or location?
+(y) Yes → What changed?
+(n) No changes → Skip (profile rarely changes)
+```
+
+---
+
+### Output Summary
+
+After completing review:
+
+```
+✅ REVIEW COMPLETE — [Date]
+
+📊 Summary:
+- Priorities: X reviewed, Y updated, Z archived
+- Hot Topics: X reviewed, Y updated, Z resolved
+- People: [Changes noted / No changes]
+- Glossary: [Terms added/removed / No changes]
+
+⏱️ All timestamps updated to [Today's Date]
+
+📁 Files modified:
+- private/tracking/priorities.md ✓
+- private/tracking/hot_topics.md ✓
+- private/context/people.md ✓
+- private/context/glossary.md ✓
+
+Next review recommended: [Date + 7 days]
+```
+
+---
+
+### Quick Mode
+
+**`/review quick`** — Abbreviated review for minor updates:
+
+```
+Quick Review — [Date]
+
+Any changes since last review ([Last Date])?
+
+1. Priorities: Any status changes? (y/n)
+2. Hot topics: Anything resolved or new? (y/n)
+3. People: Any org changes? (y/n)
+4. Glossary: New terms? (y/n)
+
+[If all n]: ✅ All timestamps updated. Full review recommended weekly.
+[If any y]: Let's walk through the changes...
+```
+
+---
+
+### Integration with Other Triggers
+
+**`/weekly`** should prompt:
+> "Want to run a full `/review` to verify all context, or quick update only?"
+
+**`/first`** after >3 days should prompt:
+> "It's been [X] days since your last session. Want to run `/review quick` to verify context is current?"
+
+---
+
+### Staleness Alerts
+
+During review, flag items that haven't been verified recently:
+
+```
+⚠️ STALENESS ALERT
+
+These items haven't been verified in 14+ days:
+- Priority 2: UAP February Updates (last: 2026-01-28)
+- Hot Topic: [Topic] (last: 2026-01-20)
+
+Review these carefully — information may be outdated.
+```

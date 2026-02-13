@@ -1,0 +1,186 @@
+---
+description: Git safety trigger - /push for pre-push validation
+alwaysApply: true
+---
+
+# Pre-Push Safety Check
+
+> **For the LLM**: Run this check when the user wants to push to a remote git repository.
+
+When the user types **`/push`** or asks to push/commit to git, perform this safety validation before proceeding.
+
+---
+
+## Step 1: Verify Architecture Integrity
+
+Check that the expected folder structure is in place:
+
+```
+Required Structure:
+├── .gitignore          # Must exist and contain private/ exclusions
+├── shared/             # Git-tracked, shareable content
+│   ├── initialization_prompt.md
+│   ├── triggers/
+│   └── templates/
+├── private/            # Must be .gitignored
+├── active/             # Must be .gitignored  
+└── archive/            # Must be .gitignored
+```
+
+### Validation Checks
+
+| Check | Pass Criteria | Action if Fail |
+|-------|---------------|----------------|
+| `.gitignore` exists | File present in root | ❌ STOP — Create .gitignore first |
+| `private/` in .gitignore | Line `private/` present | ❌ STOP — Add to .gitignore |
+| `active/` in .gitignore | Line `active/` present | ❌ STOP — Add to .gitignore |
+| `archive/` in .gitignore | Line `archive/` present | ❌ STOP — Add to .gitignore |
+| `shared/` folder exists | Directory present | ❌ STOP — Architecture broken |
+
+**If any check fails:**
+```
+⚠️ ARCHITECTURE CHECK FAILED
+
+The repository structure doesn't match the expected MyVoice architecture.
+This could result in personal data being pushed to a public repository.
+
+Issues found:
+- [List specific failures]
+
+Please fix these issues before pushing, or confirm this is intentional.
+```
+
+---
+
+## Step 2: Scan for Personal Data in Shared Files
+
+Scan all files in `shared/` for patterns that suggest personal/private information was accidentally introduced.
+
+### Red Flag Patterns
+
+| Pattern Type | Examples | Risk Level |
+|--------------|----------|------------|
+| **Names** | Specific person names (not placeholders like `[Name]`) | 🔴 High |
+| **Email addresses** | `*@company.com`, `*@*.com` patterns | 🔴 High |
+| **Employee IDs** | Numeric IDs, badge numbers | 🔴 High |
+| **Specific dates** | Real dates like "January 13, 2026" with context | 🟡 Medium |
+| **Project codenames** | Internal project names not meant to be public | 🟡 Medium |
+| **URLs** | Internal SharePoint, Confluence, Jira links | 🟡 Medium |
+| **Phone numbers** | Any phone number patterns | 🔴 High |
+| **Addresses** | Physical addresses, office locations | 🟡 Medium |
+| **Org-specific terms** | Department names, team names with context | 🟡 Medium |
+
+### Scan Output Format
+
+```
+🔍 PERSONAL DATA SCAN — shared/ folder
+
+Scanning for potential personal information...
+
+📁 shared/triggers/session.md
+   ✅ No issues found
+
+📁 shared/triggers/meetings.md
+   ⚠️ Line 45: Found potential name "John Smith" — is this a placeholder?
+   ⚠️ Line 89: Found URL "https://company.sharepoint.com/..." — should this be here?
+
+📁 shared/initialization_prompt.md
+   ✅ No issues found
+
+---
+SUMMARY:
+- Files scanned: X
+- Issues found: Y
+- 🔴 High risk: Z
+- 🟡 Medium risk: W
+```
+
+---
+
+## Step 3: User Confirmation
+
+If issues are found, present them and require explicit confirmation:
+
+```
+⚠️ POTENTIAL PERSONAL DATA DETECTED
+
+The following items were flagged in shared/ files that will be pushed to git:
+
+1. [File]: [Description of finding]
+   → Line X: "[excerpt]"
+   
+2. [File]: [Description of finding]
+   → Line X: "[excerpt]"
+
+OPTIONS:
+(a) Review and fix — I'll help you remove/anonymize this data
+(b) Override — This is intentional, proceed with push
+(c) Cancel — Don't push, let me review first
+
+What would you like to do?
+```
+
+---
+
+## Step 4: Execute Push (if approved)
+
+Only after all checks pass or user explicitly overrides:
+
+```bash
+# Recommended git commands
+git add shared/ README.md .gitignore
+git status  # Show what will be committed
+git commit -m "[User's commit message]"
+git push origin [branch]
+```
+
+### Post-Push Confirmation
+
+```
+✅ Push completed successfully
+
+Pushed to: [remote/branch]
+Files included:
+- shared/... (X files)
+- README.md
+- .gitignore
+
+NOT pushed (correctly excluded):
+- private/
+- active/
+- archive/
+```
+
+---
+
+## Quick Reference
+
+| Command | Action |
+|---------|--------|
+| `/push` | Run full safety check, then push |
+| `/push force` | Skip personal data scan, still verify architecture |
+| `/push status` | Show what would be pushed without pushing |
+| `/gitignore check` | Just verify .gitignore is correct |
+
+---
+
+## Recovery: If Personal Data Was Pushed
+
+If personal data was accidentally pushed to a public repo:
+
+1. **Don't panic** — but act quickly
+2. **Remove from repo**: 
+   ```bash
+   git rm --cached [file]
+   git commit -m "Remove sensitive file"
+   git push
+   ```
+3. **Scrub history** (if needed):
+   ```bash
+   git filter-branch --force --index-filter \
+     "git rm --cached --ignore-unmatch [file]" \
+     --prune-empty --tag-name-filter cat -- --all
+   git push origin --force --all
+   ```
+4. **Rotate credentials** if any were exposed
+5. **Notify** appropriate parties if required by policy
